@@ -1,0 +1,9 @@
+yt-dlp
+openai-whisper
+langchain
+langchain-openai
+nltk
+tqdm
+python-dotenv
+torch
+transformers
