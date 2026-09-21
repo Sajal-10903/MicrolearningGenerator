@@ -1,69 +1,79 @@
-#MicrolearningGenerator
-A Python-based tool to generate bite-sized learning content (e.g., flashcards, quizzes) from educational resources like videos, articles, or text inputs. This project automates downloading, transcribing, processing, and generating microlearning materials using modern NLP techniques.
-Features
+# 🎓 Microlearning Generator
 
-Content Downloader: Fetches resources from URLs (e.g., YouTube videos, articles) using downloader.py.
-Transcription: Converts audio/video content to text with transcriber.py.
-Text Processing: Summarizes and extracts key points using processor.py with NLP tools like Hugging Face's BART and NLTK.
-Content Generation: Creates microlearning materials via generator.py.
-Modular Design: Organized utilities in the utils folder for extensibility.
+**Turn a YouTube lecture into a transcript, a short summary and study flashcards** with one command.
 
-Tech Stack
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)
+![Whisper](https://img.shields.io/badge/OpenAI-Whisper-412991?logo=openai&logoColor=white)
+![Transformers](https://img.shields.io/badge/Hugging%20Face-BART-FFD21E?logo=huggingface&logoColor=black)
+![yt-dlp](https://img.shields.io/badge/yt--dlp-audio%20download-red)
 
-Python: Core language (3.8+).
-Hugging Face Transformers: For text summarization and NLP tasks.
-NLTK: For text processing and tokenization.
-OpenAI API (optional): For advanced text generation (with local model fallback).
-yt-dlp: For downloading YouTube videos.
-SpeechRecognition: For audio-to-text transcription.
+**Jump to:** [Pipeline](#-pipeline) · [Run it](#-run-it) · [Output](#-output) · [Limitations](#-limitations)
 
-Installation
+---
 
-Clone the repository:git clone https://github.com/your-username/MicrolearningGenerator.git
+## 🧭 Pipeline
 
+```mermaid
+flowchart LR
+    A[YouTube URL] --> B["yt-dlp + FFmpeg<br/>download audio as MP3"]
+    B --> C["Whisper (base)<br/>speech to text"]
+    C --> D["BART (facebook/bart-large-cnn)<br/>summary"]
+    C --> E["Rule-based flashcards<br/>from key sentences"]
+    C --> F[lecture_notes/ transcript]
+    D --> G[lecture_notes/ summary]
+    E --> H[flashcards/]
+```
 
-Navigate to the project directory:cd MicrolearningGenerator
+| Step | Tool | What it does |
+|---|---|---|
+| 1. Download | `yt-dlp` + FFmpeg | Fetches the video's audio and converts it to MP3 |
+| 2. Transcribe | OpenAI Whisper (`base` model) | Speech to text, saved as a transcript |
+| 3. Summarize | Hugging Face `facebook/bart-large-cnn` | Summarizes the first ~50 sentences (up to 4,000 characters) into a short summary (50 to 150 tokens) |
+| 4. Flashcards | NLTK sentence splitting | Builds 5 simple Q&A cards from the first sentences of the transcript |
 
+The project is organized as a small pipeline: `main.py` validates the URL and calls `run_pipeline` in `utils/generator.py`, which chains the download, transcription and processing modules.
 
-Install dependencies:pip install -r requirements.txt
+---
 
+## 🚀 Run it
 
-Set up environment variables (e.g., OpenAI API key, if used) in a .env file.
+**Requirements:** Python 3.8+, [FFmpeg](https://ffmpeg.org/) installed and on your PATH.
 
-Usage
-Run the main script with a URL or text file as input:
-python main.py --url "https://youtube.com/watch?v=example"
+```bash
+git clone https://github.com/Sajal-10903/MicrolearningGenerator.git
+cd MicrolearningGenerator
+pip install -r requirements.py     # the dependency list (yt-dlp, whisper, transformers, nltk, torch, ...)
+python main.py
+```
 
-The tool will:
+Paste a YouTube URL when prompted. The first run downloads the Whisper and BART models.
 
-Download the resource (if applicable).
-Transcribe audio/video to text.
-Process and summarize content.
-Generate microlearning materials (e.g., flashcards).
+---
 
-Requirements
+## 📁 Output
 
-Python 3.8 or higher.
-Dependencies listed in requirements.txt.
+| Folder | Contents |
+|---|---|
+| `downloads/` | Downloaded audio |
+| `lecture_notes/` | `<id>_transcript.txt` and `<id>_notes.txt` (summary) |
+| `flashcards/` | `<id>_flashcards.txt` (Q&A pairs) |
 
-Troubleshooting
+---
 
-ModuleNotFoundError: Ensure all modules are correctly imported via utils/__init__.py.
-OpenAI API Error (429): Switch to local models (e.g., BART) if API quota is exceeded.
+## ⚠️ Limitations
 
-Contributing
-Contributions are welcome! Please:
+- **Destructive cleanup:** each run deletes `downloads/`, `lecture_notes/`, `flashcards/` **and the Whisper and Hugging Face model caches in your home directory** (`~/.cache/whisper`, `~/.cache/huggingface`), so models re-download every run. Back up any output you want to keep.
+- **Flashcards are simple:** questions are generic ("What is a key point 1 from the lecture?") and the answers are the first five sentences, not the most important ones. There is no quiz generation yet.
+- **Summary covers only the beginning** of long lectures (first ~50 sentences).
+- YouTube URLs only (`youtube.com` and `youtu.be`).
+- The repository also contains earlier, alternative LLM-based versions of some modules at the top level (`summarizer.py`, `flashcard_generator.py`, `generator.py`, `downloader.py`). The pipeline that `main.py` runs lives in `utils/`.
 
-Fork the repository.
-Create a feature branch (git checkout -b feature-name).
-Commit changes (git commit -m "Add feature").
-Push to the branch (git push origin feature-name).
-Open a pull request.
+### Ideas for improvement
 
-License
-MIT License
-Future Improvements
+- Use an LLM or embedding-based ranking to pick key sentences and write real questions.
+- Chunk long transcripts before summarizing.
+- Add a quiz generator and support for local audio/video files and PDFs.
 
-Add support for more input formats (e.g., PDFs, podcasts).
-Enhance quiz generation with adaptive difficulty.
-Integrate additional NLP models for multilingual support.
+---
+
+**Author:** [Sajal Raj](https://github.com/Sajal-10903) · [Portfolio](https://sajalraj-portfolio.vercel.app) · [LinkedIn](https://www.linkedin.com/in/sajal-raj-456b31252/)
